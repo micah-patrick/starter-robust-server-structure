@@ -7,30 +7,8 @@ const flips = require("./data/flips-data");
 const counts = require("./data/counts-data");
 app.use(express.json());
 
-//get the count of a specific result (heads,tails, edge)
-app.use("/counts/:countId", (req, res, next) => {
-  const { countId } = req.params;
-  const foundCount = counts[countId];
-  //check if the countId exists
-  if (foundCount === undefined) {
-    next({
-      status: 404,
-      message: `Count id not found: ${countId}`,
-    });
-  } else {
-    res.json({ data: foundCount });
-  }
-});
-
-//get the counts data
 app.use("/counts", countsRouter);
-
-//get the results of all the flips
-app.use("/flips", flipsRouter); 
-
-
-
-
+app.use("/flips", flipsRouter);
 
 ///////////////////////////////////////////
 ///////////////////////////////////////////

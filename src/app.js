@@ -1,9 +1,11 @@
 const express = require("express");
 const app = express();
+const flipsRouter = require("./flips/flips.router");
+const countsRouter = require("./counts/counts.router");
 
 const flips = require("./data/flips-data");
 const counts = require("./data/counts-data");
-app.use(express.json())
+app.use(express.json());
 
 //get the count of a specific result (heads,tails, edge)
 app.use("/counts/:countId", (req, res, next) => {
@@ -11,62 +13,40 @@ app.use("/counts/:countId", (req, res, next) => {
   const foundCount = counts[countId];
   //check if the countId exists
   if (foundCount === undefined) {
-    next(`Count id not found: ${countId}`);
+    next({
+      status: 404,
+      message: `Count id not found: ${countId}`,
+    });
   } else {
     res.json({ data: foundCount });
   }
 });
 
 //get the counts data
-app.use("/counts", (req, res) => {
-  res.json({ data: counts });
-});
-
-// get the results of a specific flip
-app.use("/flips/:flipId", (req, res, next) => {
-  const { flipId } = req.params;
-  const foundFlip = flips.find((flip) => flip.id === Number(flipId));
-  if (foundFlip) {
-    res.json({ data: foundFlip });
-  } else {
-    next(`Flip id not found: ${flipId}`);
-  }
-});
+app.use("/counts", countsRouter);
 
 //get the results of all the flips
-app.get("/flips", (req, res) => {
-  res.json({ data: flips });
-});
+app.use("/flips", flipsRouter); 
 
-// Variable to hold the next id.
-// Since some ID's may already be used, you find the largest assigned id.
-let lastFlipId = flips.reduce((maxId, flip) => Math.max(maxId, flip.id), 0);
 
-// post new flip results
-app.post("/flips", (req, res, next) => {
-  const { data: { result } = {} } = req.body;
-  if (result){
-    const newFlip = {
-      id: ++lastFlipId, // Increment last id then assign as the current ID
-      result,
-    };
-    flips.push(newFlip);
-    counts[result] = counts[result] + 1; // Increment the counts
-    res.status(201).json({ data: newFlip });
-  } else {
-    res.sendStatus(400);
-  }
-});
 
+
+
+///////////////////////////////////////////
+///////////////////////////////////////////
 // Not found handler
 app.use((request, response, next) => {
-  next(`Not found: ${request.originalUrl}`);
+  next({
+    status: 404,
+    message: `Not found: ${request.originalUrl}`,
+  });
 });
 
 // Error handler
-app.use((error, request, response, next) => {
+app.use((error, req, res, next) => {
   console.error(error);
-  response.send(error);
-}); 
+  const { status = 500, message = "Something went wrong!" } = error;
+  res.status(status).json({ error: message });
+});
 
 module.exports = app;
